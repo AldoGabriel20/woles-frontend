@@ -1,0 +1,77 @@
+/* ============================================================
+   Woles Design Tokens
+   All CSS custom properties and Tailwind v4 @theme overrides.
+   ============================================================ */
+
+/* --- CSS Custom Properties (usable anywhere in CSS) --- */
+:root {
+  /* Colors */
+  --color-primary: #003527;
+  --color-primary-container: #064e3b;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #80bea6;
+  --color-inverse-primary: #95d3ba;
+  --color-surface: #f8faf6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f1;
+  --color-surface-container: #eceeeb;
+  --color-on-surface: #191c1b;
+  --color-on-surface-variant: #404944;
+  --color-outline: #707974;
+  --color-outline-variant: #bfc9c3;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-secondary: #0058be;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+}
+
+/* --- Tailwind v4 @theme block (extends the design system) --- */
+@theme {
+  /* Colors */
+  --color-primary: #003527;
+  --color-primary-container: #064e3b;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #80bea6;
+  --color-inverse-primary: #95d3ba;
+  --color-surface: #f8faf6;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f1;
+  --color-surface-container: #eceeeb;
+  --color-on-surface: #191c1b;
+  --color-on-surface-variant: #404944;
+  --color-outline: #707974;
+  --color-outline-variant: #bfc9c3;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-secondary: #0058be;
+
+  /* Font Families */
+  --font-family-display: var(--font-geist), sans-serif;
+  --font-family-body: var(--font-inter), sans-serif;
+  --font-family-sans: var(--font-inter), sans-serif;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-DEFAULT: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Font Sizes */
+  --font-size-display-lg: 48px;
+  --font-size-headline-lg: 32px;
+  --font-size-headline-lg-mobile: 28px;
+  --font-size-headline-md: 24px;
+  --font-size-title-lg: 20px;
+  --font-size-body-lg: 18px;
+  --font-size-body-md: 16px;
+  --font-size-label-md: 14px;
+  --font-size-label-sm: 12px;
+}
