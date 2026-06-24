@@ -58,7 +58,7 @@ export default function SettingsPage() {
             ].join(" ")}
           >
             {item.icon}
-            <span className="hidden xs:block">{item.label}</span>
+            <span className="hidden sm:block">{item.label}</span>
           </button>
         ))}
       </div>

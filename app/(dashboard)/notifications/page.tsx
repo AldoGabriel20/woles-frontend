@@ -280,13 +280,13 @@ export default function NotificationsPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-display-sm text-on-surface">
           Notification History
         </h1>
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 rounded-lg border border-outline-variant bg-surface px-4 py-2.5 text-label-md text-on-surface shadow-sm hover:bg-surface-container"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-outline-variant bg-surface px-4 py-2.5 text-label-md text-on-surface shadow-sm hover:bg-surface-container sm:w-auto"
         >
           <Download size={15} />
           Export PDF

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { Eye, EyeOff, QrCode, LogOut, AlertTriangle, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -40,11 +42,21 @@ function maskIP(ip?: string | null): string {
 
 // ─── Change Password Modal ────────────────────────────────────────────────────
 
-interface PasswordForm {
-  old_password: string;
-  new_password: string;
-  confirm: string;
-}
+const passwordSchema = z
+  .object({
+    old_password: z.string().min(1, "Current password is required"),
+    new_password: z
+      .string()
+      .min(8, "Min 8 characters")
+      .max(128, "Max 128 characters"),
+    confirm: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((d) => d.new_password === d.confirm, {
+    message: "Passwords don't match",
+    path: ["confirm"],
+  });
+
+type PasswordForm = z.infer<typeof passwordSchema>;
 
 function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const [showOld, setShowOld] = useState(false);
@@ -53,10 +65,9 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
     setError,
-  } = useForm<PasswordForm>();
+  } = useForm<PasswordForm>({ resolver: zodResolver(passwordSchema) });
 
   const mutation = useMutation({
     mutationFn: (d: PasswordForm) =>
@@ -84,7 +95,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             <div className="relative">
               <input
                 type={showOld ? "text" : "password"}
-                {...register("old_password", { required: "Required" })}
+                {...register("old_password")}
                 className="w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 pr-10 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               <button
@@ -109,7 +120,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             <div className="relative">
               <input
                 type={showNew ? "text" : "password"}
-                {...register("new_password", { required: "Required", minLength: { value: 8, message: "Min 8 characters" } })}
+                {...register("new_password")}
                 className="w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 pr-10 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
               <button
@@ -133,10 +144,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
             </label>
             <input
               type="password"
-              {...register("confirm", {
-                required: "Required",
-                validate: (v) => v === watch("new_password") || "Passwords don't match",
-              })}
+              {...register("confirm")}
               className="w-full rounded-lg border border-outline-variant bg-surface-container px-3 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
             {errors.confirm && (

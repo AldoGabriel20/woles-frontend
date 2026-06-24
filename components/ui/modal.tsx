@@ -48,7 +48,7 @@ export function Modal({
       {/* Dialog */}
       <div
         className={[
-          "relative flex w-full flex-col rounded-t-2xl bg-surface shadow-xl sm:rounded-2xl",
+          "relative flex w-full max-h-[90dvh] flex-col rounded-t-2xl bg-surface shadow-xl sm:rounded-2xl",
           maxWidth,
         ].join(" ")}
       >

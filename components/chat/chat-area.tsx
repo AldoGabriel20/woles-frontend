@@ -79,9 +79,10 @@ function QuotaBanner({
 
 interface ChatAreaProps {
   initialMessages?: ChatMessage[];
+  isLoading?: boolean;
 }
 
-export function ChatArea({ initialMessages = [] }: ChatAreaProps) {
+export function ChatArea({ initialMessages = [], isLoading = false }: ChatAreaProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const plan = user?.plan ?? "free";
@@ -159,7 +160,18 @@ export function ChatArea({ initialMessages = [] }: ChatAreaProps) {
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {messages.length === 0 && !sendMutation.isPending && (
+        {isLoading ? (
+          <div className="space-y-3">
+            {[0.6, 0.4, 0.7, 0.5].map((w, i) => (
+              <div key={i} className={["flex", i % 2 === 0 ? "justify-start" : "justify-end"].join(" ")}>
+                <div
+                  className="animate-pulse rounded-2xl bg-surface-container"
+                  style={{ width: `${w * 100}%`, height: 44 }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : messages.length === 0 && !sendMutation.isPending ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <span className="mb-4 text-5xl">💬</span>
             <p className="mb-1 font-display text-title-lg text-on-surface">
@@ -185,9 +197,9 @@ export function ChatArea({ initialMessages = [] }: ChatAreaProps) {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
-        {messages.map((msg) => (
+        {!isLoading && messages.map((msg) => (
           <MessageBubble key={msg.id} msg={msg} />
         ))}
 

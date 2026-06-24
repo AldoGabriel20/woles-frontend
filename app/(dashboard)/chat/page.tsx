@@ -12,7 +12,7 @@ export default function ChatPage() {
   // Mobile: toggle between panel view and chat view
   const [mobileView, setMobileView] = useState<"list" | "chat">("chat");
 
-  const { data: messagesData } = useQuery({
+  const { data: messagesData, isLoading: messagesLoading } = useQuery({
     queryKey: ["chat", "messages"],
     queryFn: () => listMessages({ per_page: 200 }),
     staleTime: 30_000,
@@ -21,7 +21,7 @@ export default function ChatPage() {
   const messages = messagesData?.messages ?? [];
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-surface">
+    <div className="flex h-[calc(100dvh-10rem)] flex-col overflow-hidden bg-surface lg:h-[calc(100dvh-3rem)]">
       {/* ─── Mobile header ── */}
       <div className="flex items-center border-b border-outline-variant bg-surface px-4 py-3 lg:hidden">
         {mobileView === "chat" ? (
@@ -67,7 +67,7 @@ export default function ChatPage() {
             mobileView === "chat" ? "flex" : "hidden",
           ].join(" ")}
         >
-          <ChatArea initialMessages={messages} />
+          <ChatArea initialMessages={messages} isLoading={messagesLoading} />
         </div>
       </div>
     </div>

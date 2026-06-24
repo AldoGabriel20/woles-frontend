@@ -206,13 +206,13 @@ export default function FamilyPage() {
     <>
       <div className="mx-auto max-w-6xl px-4 py-6">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="font-display text-display-sm text-on-surface">
             Family Management
           </h1>
           <button
             onClick={openAdd}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-label-md text-on-primary shadow hover:brightness-110"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-label-md text-on-primary shadow hover:brightness-110 sm:w-auto"
           >
             <Plus size={15} />
             Add Family Member

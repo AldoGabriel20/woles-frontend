@@ -293,12 +293,30 @@ function GoalsList({
 }: {
   onEdit: (g: Goal) => void;
 }) {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["goals", "all"],
     queryFn: () => listGoals(),
   });
 
   const goals = data?.goals ?? [];
+
+  if (isLoading)
+    return (
+      <ul className="space-y-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <li key={i} className="animate-pulse rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-surface-container" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/2 rounded bg-surface-container" />
+                <div className="h-2.5 w-full rounded-full bg-surface-container" />
+              </div>
+              <div className="h-5 w-12 rounded bg-surface-container" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
 
   if (goals.length === 0)
     return (
@@ -348,7 +366,7 @@ export default function GoalsPage() {
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | "progress">("create");
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
-  const { data: activeData } = useQuery({
+  const { data: activeData, isLoading: activeLoading } = useQuery({
     queryKey: ["goals", "active"],
     queryFn: () => listGoals({ status: "active", per_page: 1 }),
   });
@@ -378,7 +396,7 @@ export default function GoalsPage() {
     <>
       <div className="mx-auto max-w-6xl px-4 py-6">
         {/* Header */}
-        <div className="mb-1 flex items-center justify-between">
+        <div className="mb-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-display text-display-sm text-on-surface">
               Financial Goal Tracker
@@ -387,7 +405,7 @@ export default function GoalsPage() {
               Tracking your calm journey to financial freedom.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:shrink-0">
             <button
               onClick={openProgress}
               disabled={!activeGoal}
@@ -410,7 +428,15 @@ export default function GoalsPage() {
           {/* Left column */}
           <div className="space-y-6">
             {/* Active goal hero */}
-            <ActiveGoalCard goal={activeGoal} onUpdateProgress={openProgress} />
+            {activeLoading ? (
+              <div className="animate-pulse rounded-2xl bg-surface-container-lowest border border-outline-variant p-6">
+                <div className="mb-4 h-6 w-1/3 rounded bg-surface-container" />
+                <div className="mb-3 h-10 w-2/3 rounded bg-surface-container" />
+                <div className="h-2.5 w-full rounded-full bg-surface-container" />
+              </div>
+            ) : (
+              <ActiveGoalCard goal={activeGoal} onUpdateProgress={openProgress} />
+            )}
 
             {/* All goals */}
             <div className="rounded-xl border border-outline-variant bg-surface-container-lowest">

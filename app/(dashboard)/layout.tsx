@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
        *  │  [MobileNav — mobile only, fixed bottom] │
        *  └──────────────────────────────────────────┘
        */}
-      <div className="min-h-screen bg-surface">
+      <div className="min-h-screen overflow-x-hidden bg-surface">
         {/* Desktop sidebar (fixed, 240px) */}
         <Sidebar />
 

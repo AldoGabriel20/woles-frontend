@@ -33,11 +33,23 @@ function formatRp(amount: number): string {
 // ─── Total Expenses Hero Card ─────────────────────────────────────────────────
 
 function TotalExpensesCard() {
-  const { data: summary } = useQuery({
+  const { data: summary, isLoading } = useQuery({
     queryKey: ["finances", "summary"],
     queryFn: getFinancialSummary,
     staleTime: 60_000,
   });
+
+  if (isLoading)
+    return (
+      <div className="animate-pulse rounded-xl p-5 shadow-md" style={{ backgroundColor: "#064e3b" }}>
+        <div className="mb-3 h-3 w-1/2 rounded bg-white/20" />
+        <div className="mb-4 h-10 w-3/4 rounded bg-white/20" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-14 rounded-lg bg-white/10" />
+          <div className="h-14 rounded-lg bg-white/10" />
+        </div>
+      </div>
+    );
 
   const total = summary?.total_monthly_cost ?? 0;
 
@@ -157,7 +169,7 @@ type Period = "monthly" | "last_month";
 function CategoryBreakdownCard() {
   const [period, setPeriod] = useState<Period>("monthly");
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["finances", "spending", period],
     queryFn: () => getSpendingByCategory(period),
     staleTime: 60_000,
@@ -207,7 +219,19 @@ function CategoryBreakdownCard() {
         </select>
       </div>
 
-      {displayCategories.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex animate-pulse items-center gap-3 rounded-lg border border-outline-variant p-3">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-surface-container" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-1/2 rounded bg-surface-container" />
+                <div className="h-3 w-1/3 rounded bg-surface-container" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : displayCategories.length === 0 ? (
         <p className="py-8 text-center text-label-md text-on-surface-variant">
           No spending data available.
         </p>
@@ -225,7 +249,7 @@ function CategoryBreakdownCard() {
 // ─── Spending Trend Card ──────────────────────────────────────────────────────
 
 function SpendingTrendCard() {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["finances", "trend"],
     queryFn: () => getSpendingTrend("weekly"),
     staleTime: 60_000,
@@ -236,7 +260,11 @@ function SpendingTrendCard() {
       <h3 className="mb-4 font-display text-title-md text-on-surface">
         Spending Trend
       </h3>
-      <SpendingTrendChart data={data ?? []} />
+      {isLoading ? (
+        <div className="animate-pulse rounded-lg bg-surface-container" style={{ height: 200 }} />
+      ) : (
+        <SpendingTrendChart data={data ?? []} />
+      )}
     </div>
   );
 }
@@ -283,7 +311,7 @@ function buildBillsFromSubscriptions(subs: Subscription[]): UpcomingBill[] {
 function UpcomingBillsTable() {
   const [page, setPage] = useState(1);
 
-  const { data: billsData } = useQuery({
+  const { data: billsData, isLoading: billsLoading } = useQuery({
     queryKey: ["finances", "upcoming-bills", page],
     queryFn: () => getUpcomingBills({ page, per_page: 10 }),
     staleTime: 60_000,
@@ -325,7 +353,18 @@ function UpcomingBillsTable() {
         )}
       </div>
 
-      {bills.length === 0 ? (
+      {billsLoading ? (
+        <div className="divide-y divide-outline-variant">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex animate-pulse items-center gap-3 px-5 py-3">
+              <div className="h-4 w-32 rounded bg-surface-container" />
+              <div className="h-4 w-20 rounded bg-surface-container" />
+              <div className="ml-auto h-4 w-24 rounded bg-surface-container" />
+              <div className="h-6 w-16 rounded-full bg-surface-container" />
+            </div>
+          ))}
+        </div>
+      ) : bills.length === 0 ? (
         <p className="py-8 text-center text-label-md text-on-surface-variant">
           No upcoming bills.
         </p>

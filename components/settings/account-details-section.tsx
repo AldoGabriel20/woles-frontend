@@ -2,8 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera } from "lucide-react";
+import { z } from "zod";
 
 import { getProfile, updateProfile, uploadAvatar } from "@/lib/api/account";
 import type { UpdateProfileRequest } from "@/lib/api/types";
@@ -22,11 +24,13 @@ const PLAN_BADGES: Record<string, string> = {
   advanced: "bg-amber-100 text-amber-800",
 };
 
-interface ProfileForm {
-  firstName: string;
-  lastName: string;
-  timezone: string;
-}
+const profileSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(100),
+  lastName: z.string().max(100),
+  timezone: z.string().min(1, "Timezone is required"),
+});
+
+type ProfileForm = z.infer<typeof profileSchema>;
 
 export function AccountDetailsSection() {
   const queryClient = useQueryClient();
@@ -50,6 +54,7 @@ export function AccountDetailsSection() {
     formState: { isDirty },
     reset,
   } = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
     values: {
       firstName: initialFirst,
       lastName: initialLast,
@@ -164,7 +169,7 @@ export function AccountDetailsSection() {
               First Name
             </label>
             <input
-              {...register("firstName", { required: true })}
+              {...register("firstName")}
               className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>

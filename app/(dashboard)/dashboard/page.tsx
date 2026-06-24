@@ -232,7 +232,7 @@ export default function DashboardPage() {
     staleTime: 5 * 60_000,
   });
 
-  const { data: notificationsData } = useQuery({
+  const { data: notificationsData, isLoading: notificationsLoading } = useQuery({
     queryKey: ["notifications", "recent"],
     queryFn: () => listNotifications({ per_page: 5 }),
     staleTime: 5 * 60_000,
@@ -380,7 +380,20 @@ export default function DashboardPage() {
           Recent Activity
         </h2>
 
-        {recentActivity.length === 0 ? (
+        {notificationsLoading ? (
+          <div className="divide-y divide-outline-variant rounded-lg border border-outline-variant bg-surface-container-lowest px-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex animate-pulse items-center gap-3 py-3">
+                <div className="h-8 w-8 shrink-0 rounded-full bg-surface-container" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-2/3 rounded bg-surface-container" />
+                  <div className="h-3 w-1/3 rounded bg-surface-container" />
+                </div>
+                <div className="h-5 w-16 rounded-full bg-surface-container" />
+              </div>
+            ))}
+          </div>
+        ) : recentActivity.length === 0 ? (
           <p className="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-6 text-center text-body-md text-on-surface-variant">
             No recent activity to show.
           </p>
