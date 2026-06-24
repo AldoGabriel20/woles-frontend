@@ -296,6 +296,34 @@ export interface MonthlyCostItem {
   subscription_count: number;
 }
 
+export interface SpendingByCategory {
+  category: string;
+  amount: number;
+  percentage: number;
+  currency: string;
+}
+
+export interface SpendingTrendWeek {
+  week_label: string;
+  amount: number;
+  currency: string;
+}
+
+export interface UpcomingBill {
+  id: string;
+  name: string;
+  amount: number;
+  currency: string;
+  due_date: string;
+  category: string;
+  status: string;
+}
+
+export interface UpcomingBillsParams {
+  page?: number;
+  per_page?: number;
+}
+
 // ─── Timeline ─────────────────────────────────────────────────────────────────
 
 export interface TimelineItem {
