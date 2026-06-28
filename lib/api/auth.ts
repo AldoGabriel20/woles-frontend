@@ -1,5 +1,28 @@
+import axios from "axios";
+import Cookies from "js-cookie";
 import apiClient from "./client";
 import type { TokenPair, User, UserSession } from "./types";
+
+// ─── Auth proxy client ────────────────────────────────────────────────────────
+// Routes login / register / refresh / logout through the Next.js API proxy at
+// /api/auth/* so that Set-Cookie responses (refresh_token, csrf_token) are
+// stored on localhost:3000 — the same origin the proxy.ts middleware reads.
+const _MUTATING = new Set(["post", "put", "patch", "delete"]);
+
+const authProxyClient = axios.create({
+  baseURL: "/api/auth",
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
+
+authProxyClient.interceptors.request.use((config) => {
+  const method = (config.method ?? "get").toLowerCase();
+  if (_MUTATING.has(method)) {
+    const csrfToken = Cookies.get("csrf_token");
+    if (csrfToken) config.headers.set("X-CSRF-Token", csrfToken);
+  }
+  return config;
+});
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
@@ -16,7 +39,7 @@ export interface RegisterResponse {
 }
 
 export async function register(data: RegisterRequest): Promise<RegisterResponse> {
-  const res = await apiClient.post<RegisterResponse>("/auth/register", data);
+  const res = await authProxyClient.post<RegisterResponse>("/register", data);
   return res.data;
 }
 
@@ -33,14 +56,14 @@ export interface LoginResponse {
 }
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const res = await apiClient.post<LoginResponse>("/auth/login", data);
+  const res = await authProxyClient.post<LoginResponse>("/login", data);
   return res.data;
 }
 
 // ─── Logout ───────────────────────────────────────────────────────────────────
 
 export async function logout(): Promise<void> {
-  await apiClient.post("/auth/logout", {});
+  await authProxyClient.post("/logout", {});
 }
 
 // ─── Refresh token ────────────────────────────────────────────────────────────
@@ -50,7 +73,7 @@ export interface RefreshResponse {
 }
 
 export async function refreshToken(): Promise<RefreshResponse> {
-  const res = await apiClient.post<RefreshResponse>("/auth/refresh", {});
+  const res = await authProxyClient.post<RefreshResponse>("/refresh", {});
   return res.data;
 }
 

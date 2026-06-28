@@ -66,6 +66,11 @@ export async function deleteDocumentFile(documentId: string): Promise<void> {
   await apiClient.delete(`/documents/${documentId}/file`);
 }
 
+export async function getDocumentFileURL(documentId: string): Promise<string> {
+  const res = await apiClient.get<{ url: string }>(`/documents/${documentId}/file/url`);
+  return res.data.url;
+}
+
 export async function getStorageUsage(): Promise<StorageUsage> {
   const res = await apiClient.get<{ storage: StorageUsage }>(
     "/documents/storage/usage",

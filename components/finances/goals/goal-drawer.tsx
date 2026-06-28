@@ -129,7 +129,7 @@ function CreateEditForm({
         target_amount: parseRupiah(data.target_amount_raw),
         monthly_target: data.monthly_target_raw ? parseRupiah(data.monthly_target_raw) : undefined,
         currency: data.currency,
-        target_date: data.target_date ? `${data.target_date}T00:00:00Z` : undefined,
+        target_date: data.target_date || undefined,
       };
       return isEdit ? updateGoal(goal!.id, payload) : createGoal(payload);
     },
@@ -149,9 +149,34 @@ function CreateEditForm({
       noValidate
     >
       {mutation.isError && (
-        <p className="mb-4 rounded-lg bg-error-container px-4 py-2.5 text-label-md text-error">
-          {(mutation.error as Error)?.message ?? "Something went wrong. Try again."}
-        </p>
+        (() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const err = mutation.error as any;
+          const isPlanRequired =
+            err?.response?.status === 403 ||
+            err?.response?.data?.error === "plan_required";
+          if (isPlanRequired) {
+            return (
+              <div className="mb-4 rounded-lg bg-error-container px-4 py-3 text-label-md text-error">
+                <p className="font-medium">Upgrade diperlukan</p>
+                <p className="mt-0.5 text-label-sm opacity-80">
+                  Goal tracker membutuhkan paket Premium atau Advanced.
+                </p>
+                <a
+                  href="/billing/checkout"
+                  className="mt-2 inline-block rounded-lg bg-primary px-4 py-1.5 text-label-sm text-on-primary hover:brightness-110"
+                >
+                  Upgrade Sekarang
+                </a>
+              </div>
+            );
+          }
+          return (
+            <p className="mb-4 rounded-lg bg-error-container px-4 py-2.5 text-label-md text-error">
+              {err?.response?.data?.message ?? err?.message ?? "Something went wrong. Try again."}
+            </p>
+          );
+        })()
       )}
 
       {/* Title */}
@@ -362,33 +387,31 @@ export function GoalDrawer({ open, onClose, mode = "create", goal }: GoalDrawerP
         onClick={onClose}
         aria-hidden
       />
-      <aside
+      <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={[
-          "fixed z-50 flex flex-col bg-surface-container-lowest shadow-xl",
-          "bottom-0 left-0 right-0 max-h-[90dvh] rounded-t-2xl",
-          "md:bottom-auto md:right-0 md:top-0 md:h-full md:w-[420px] md:rounded-none md:rounded-l-2xl",
-        ].join(" ")}
+        className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
       >
-        <div className="flex items-center justify-between border-b border-outline-variant px-5 py-4">
-          <h2 className="font-display text-title-lg text-on-surface">{title}</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        <div className="relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl bg-surface-container-lowest shadow-xl sm:rounded-2xl">
+          <div className="flex items-center justify-between border-b border-outline-variant px-5 py-4">
+            <h2 className="font-display text-title-lg text-on-surface">{title}</h2>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
+            >
+              <X size={18} />
+            </button>
+          </div>
 
-        {mode === "progress" && goal ? (
-          <ProgressForm goal={goal} onClose={onClose} />
-        ) : (
-          <CreateEditForm goal={mode === "edit" ? goal : null} onClose={onClose} />
-        )}
-      </aside>
+          {mode === "progress" && goal ? (
+            <ProgressForm goal={goal} onClose={onClose} />
+          ) : (
+            <CreateEditForm goal={mode === "edit" ? goal : null} onClose={onClose} />
+          )}
+        </div>
+      </div>
     </>
   );
 }

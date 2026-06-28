@@ -75,6 +75,7 @@ apiClient.interceptors.response.use(
       status === 401 &&
       !originalRequest._retry &&
       !originalRequest.url?.includes("/auth/refresh") &&
+      !originalRequest.url?.includes("/api/auth/refresh") &&
       errorCode !== "token_reused"
     ) {
       if (_isRefreshing) {
@@ -96,11 +97,22 @@ apiClient.interceptors.response.use(
       _isRefreshing = true;
 
       try {
-        // Attempt silent refresh — refresh_token is in HttpOnly cookie
-        // so no body needed; withCredentials sends it automatically.
-        const { data } = await apiClient.post<{
+        // Attempt silent refresh via the Next.js auth proxy (/api/auth/refresh)
+        // so the new refresh_token cookie is stored on localhost:3000.
+        const csrfToken = Cookies.get("csrf_token");
+        const { data } = await axios.post<{
           tokens: { access_token: string };
-        }>("/auth/refresh");
+        }>(
+          "/api/auth/refresh",
+          {},
+          {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json",
+              ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+            },
+          },
+        );
 
         const newToken = data.tokens.access_token;
         tokenStore.set(newToken);
@@ -126,6 +138,19 @@ apiClient.interceptors.response.use(
       }
     }
 
+    return Promise.reject(error);
+  },
+);
+
+// ─── Normalize API errors — extract backend message field ─────────────────────
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const backendMessage: string | undefined = error?.response?.data?.message;
+    if (backendMessage && error?.message !== backendMessage) {
+      error.message = backendMessage;
+    }
     return Promise.reject(error);
   },
 );

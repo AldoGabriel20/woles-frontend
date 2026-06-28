@@ -29,21 +29,22 @@ interface BottomItem {
 
 const BOTTOM_ITEMS: BottomItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Reminders", href: "/dashboard/reminders", icon: Bell },
-  { label: "Documents", href: "/dashboard/documents", icon: FileText },
-  { label: "Finances", href: "/dashboard/finances", icon: DollarSign },
+  { label: "Reminders", href: "/reminders", icon: Bell },
+  { label: "Documents", href: "/documents", icon: FileText },
+  { label: "Finances", href: "/finances/overview", icon: DollarSign },
 ];
 
 const MORE_ITEMS: BottomItem[] = [
-  { label: "AI Chat Hub", href: "/dashboard/chat", icon: MessageCircle },
-  { label: "Family", href: "/dashboard/family", icon: Users },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  { label: "AI Chat Hub", href: "/chat", icon: MessageCircle },
+  { label: "Family", href: "/family", icon: Users },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
+  if (href === "/finances/overview") return pathname.startsWith("/finances");
   return pathname === href || pathname.startsWith(href + "/");
 }
 

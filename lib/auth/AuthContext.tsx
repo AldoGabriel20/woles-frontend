@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import * as authApi from "@/lib/api/auth";
+import { initCsrf } from "@/lib/api/csrf";
 import { tokenStore } from "@/lib/api/token-store";
 import type { User } from "@/lib/api/types";
 
@@ -85,6 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const init = async () => {
       try {
+        // Ensure the CSRF cookie is set before any POST request.
+        await initCsrf();
         const res = await authApi.refreshToken();
         if (cancelled) return;
         _applyToken(res.tokens.access_token);

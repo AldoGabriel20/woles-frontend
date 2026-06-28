@@ -70,7 +70,7 @@ function ProfileMenu({ user, onClose, onSignOut }: ProfileMenuProps) {
 
       {/* Menu items */}
       <Link
-        href="/dashboard/settings"
+        href="/settings"
         onClick={onClose}
         className="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface hover:bg-surface-container"
       >
@@ -132,7 +132,7 @@ export function Topbar() {
       {/* Right: notification bell + profile avatar */}
       <div className="flex items-center gap-1">
         <Link
-          href="/dashboard/notifications"
+          href="/notifications"
           aria-label="Notifications"
           className="flex h-10 w-10 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
         >

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
   ArrowUp,
@@ -11,6 +14,7 @@ import {
   Home,
   Plus,
   ShoppingCart,
+  X,
   Zap,
 } from "lucide-react";
 
@@ -20,9 +24,137 @@ import {
   getSpendingTrend,
   getUpcomingBills,
 } from "@/lib/api/finances";
-import { listSubscriptions } from "@/lib/api/subscriptions";
-import type { SpendingByCategory, Subscription, UpcomingBill } from "@/lib/api/types";
+import { createSubscription, listSubscriptions } from "@/lib/api/subscriptions";
+import type { BillingCycle, SpendingByCategory, Subscription, SubscriptionCategory, UpcomingBill } from "@/lib/api/types";
 import { SpendingTrendChart } from "@/components/finances/overview/spending-trend-chart";
+
+// ─── Add Transaction Modal ────────────────────────────────────────────────────
+
+const txSchema = z.object({
+  name: z.string().min(1, "Name is required").max(200),
+  amount: z.string().min(1, "Amount is required"),
+  billing_cycle: z.enum(["weekly", "monthly", "quarterly", "yearly", "custom"] as [BillingCycle, ...BillingCycle[]]),
+  category: z.enum(["entertainment", "productivity", "health", "education", "finance", "utilities", "other"] as [SubscriptionCategory, ...SubscriptionCategory[]]),
+  next_billing_date: z.string().optional(),
+  notes: z.string().optional(),
+});
+type TxFormData = z.infer<typeof txSchema>;
+
+function parseAmount(val: string): number {
+  return Number(val.replace(/\D/g, "")) || 0;
+}
+function formatAmount(val: string): string {
+  const n = val.replace(/\D/g, "");
+  return n ? Number(n).toLocaleString("id-ID") : "";
+}
+
+function AddTransactionModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<TxFormData>({
+    resolver: zodResolver(txSchema),
+    defaultValues: { name: "", amount: "", billing_cycle: "monthly", category: "other", next_billing_date: "", notes: "" },
+  });
+  const amountRaw = watch("amount");
+
+  const mutation = useMutation({
+    mutationFn: (data: TxFormData) =>
+      createSubscription({
+        name: data.name,
+        amount: parseAmount(data.amount),
+        currency: "IDR",
+        billing_cycle: data.billing_cycle,
+        category: data.category,
+        ...(data.next_billing_date ? { next_billing_date: new Date(data.next_billing_date).toISOString() } : {}),
+        ...(data.notes ? { notes: data.notes } : {}),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["finances"] });
+      reset();
+      onClose();
+    },
+  });
+
+  if (!open) return null;
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div role="dialog" aria-modal="true" aria-label="Add Transaction" className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+        <div className="relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl bg-surface-container-lowest shadow-xl sm:rounded-2xl">
+          <div className="flex items-center justify-between border-b border-outline-variant px-5 py-4">
+            <h2 className="font-display text-title-lg text-on-surface">Add Transaction</h2>
+            <button onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container">
+              <X size={18} />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="flex-1 overflow-y-auto px-5 py-5" noValidate>
+            {mutation.isError && (
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              <p className="mb-4 rounded-lg bg-error-container px-4 py-2.5 text-label-md text-error">
+                {(mutation.error as any)?.response?.data?.message ?? (mutation.error as Error)?.message ?? "Something went wrong."}
+              </p>
+            )}
+
+            {/* Name */}
+            <div className="mb-4">
+              <label className="mb-1.5 block text-label-md text-on-surface-variant">Name <span className="text-error">*</span></label>
+              <input {...register("name")} placeholder="e.g. Netflix, Listrik PLN" className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary" />
+              {errors.name && <p className="mt-1 text-label-sm text-error">{errors.name.message}</p>}
+            </div>
+
+            {/* Amount */}
+            <div className="mb-4">
+              <label className="mb-1.5 block text-label-md text-on-surface-variant">Amount (IDR) <span className="text-error">*</span></label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-label-md text-on-surface-variant">Rp</span>
+                <input value={amountRaw} onChange={(e) => setValue("amount", formatAmount(e.target.value))} placeholder="65.000" inputMode="numeric" className="w-full rounded-lg border border-outline-variant bg-surface py-2.5 pl-9 pr-3.5 text-body-md text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary" />
+              </div>
+              <input type="hidden" {...register("amount")} />
+              {errors.amount && <p className="mt-1 text-label-sm text-error">{errors.amount.message}</p>}
+            </div>
+
+            {/* Billing Cycle + Category */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-label-md text-on-surface-variant">Billing Cycle</label>
+                <select {...register("billing_cycle")} className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                  {(["weekly", "monthly", "quarterly", "yearly", "custom"] as BillingCycle[]).map((c) => (
+                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-label-md text-on-surface-variant">Category</label>
+                <select {...register("category")} className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                  {(["entertainment", "productivity", "health", "education", "finance", "utilities", "other"] as SubscriptionCategory[]).map((c) => (
+                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Next Billing Date */}
+            <div className="mb-4">
+              <label className="mb-1.5 block text-label-md text-on-surface-variant">Next Billing Date</label>
+              <input {...register("next_billing_date")} type="date" className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+            </div>
+
+            {/* Notes */}
+            <div className="mb-6">
+              <label className="mb-1.5 block text-label-md text-on-surface-variant">Notes</label>
+              <textarea {...register("notes")} rows={2} placeholder="Optional notes…" className="w-full resize-none rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary" />
+            </div>
+
+            <button type="submit" disabled={mutation.isPending} className="w-full rounded-lg bg-primary py-3 font-display text-label-lg text-on-primary shadow transition hover:brightness-110 disabled:opacity-60">
+              {mutation.isPending ? "Saving…" : "Save Transaction"}
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -327,7 +459,7 @@ function UpcomingBillsTable() {
   const bills: UpcomingBill[] =
     (billsData?.bills && billsData.bills.length > 0)
       ? billsData.bills
-      : subsData
+      : subsData?.subscriptions
         ? buildBillsFromSubscriptions(subsData.subscriptions)
         : [];
 
@@ -502,6 +634,29 @@ function BudgetStatusWidget() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function FinancesOverviewPage() {
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"pdf" | "excel" | "csv">("pdf");
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const { exportFinances } = await import("@/lib/api/finances");
+      const blob = await exportFinances(exportFormat);
+      const extMap: Record<string, string> = { pdf: "pdf", excel: "xlsx", csv: "csv" };
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `finances-${new Date().toISOString().slice(0, 10)}.${extMap[exportFormat]}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Gagal export data. Coba lagi.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       {/* Header */}
@@ -515,11 +670,25 @@ export default function FinancesOverviewPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-1.5 rounded-lg border border-outline-variant bg-surface px-4 py-2.5 text-label-md text-on-surface shadow-sm hover:bg-surface-container">
+          <select
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value as "pdf" | "excel" | "csv")}
+            className="rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-label-md text-on-surface shadow-sm focus:outline-none"
+          >
+            <option value="pdf">PDF</option>
+            <option value="excel">Excel</option>
+            <option value="csv">CSV</option>
+          </select>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-1.5 rounded-lg border border-outline-variant bg-surface px-4 py-2.5 text-label-md text-on-surface shadow-sm hover:bg-surface-container disabled:opacity-60">
             <Download size={15} />
-            Export Data
+            {exporting ? "Exporting…" : "Export"}
           </button>
-          <button className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-label-md text-on-primary shadow hover:brightness-110">
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-label-md text-on-primary shadow hover:brightness-110">
             <Plus size={15} />
             Add Transaction
           </button>
@@ -556,6 +725,9 @@ export default function FinancesOverviewPage() {
       <div className="mt-6 lg:hidden">
         <BudgetStatusWidget />
       </div>
+
+      {/* Add Transaction Modal */}
+      <AddTransactionModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
     </div>
   );
 }

@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
+  BellRing,
   CreditCard,
   DollarSign,
   FileText,
   LayoutDashboard,
   MessageCircle,
   Settings,
+  Target,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -40,23 +42,27 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Reminders", href: "/dashboard/reminders", icon: Bell },
-  { label: "Documents", href: "/dashboard/documents", icon: FileText },
-  { label: "Finances", href: "/dashboard/finances", icon: DollarSign },
-  { label: "AI Chat Hub", href: "/dashboard/chat", icon: MessageCircle },
+  { label: "Reminders", href: "/reminders", icon: Bell },
+  { label: "Documents", href: "/documents", icon: FileText },
+  { label: "Finances", href: "/finances/overview", icon: DollarSign },
+  { label: "Goals", href: "/finances/goals", icon: Target },
+  { label: "Notifications", href: "/notifications", icon: BellRing },
+  { label: "AI Chat Hub", href: "/chat", icon: MessageCircle },
   {
     label: "Family",
-    href: "/dashboard/family",
+    href: "/family",
     icon: Users,
     plans: ["advanced"],
   },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
+  if (href === "/finances/overview") return pathname === "/finances/overview" || pathname === "/finances";
+  if (href === "/finances/goals") return pathname.startsWith("/finances/goals");
   return pathname === href || pathname.startsWith(href + "/");
 }
 

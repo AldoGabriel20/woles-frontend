@@ -240,6 +240,8 @@ export default function NotificationsPage() {
   const [categoryFilter, setCategoryFilter] = useState<NotificationEntityType | "all">("all");
   const [range, setRange] = useState<RangeKey>("30d");
   const [page, setPage] = useState(1);
+  const [exportFormat, setExportFormat] = useState<"pdf" | "excel" | "csv">("pdf");
+  const [exporting, setExporting] = useState(false);
 
   const queryKey = ["notifications", categoryFilter, range, page];
 
@@ -258,17 +260,20 @@ export default function NotificationsPage() {
   const hasMore = meta ? page < meta.total_pages : false;
 
   async function handleExport() {
+    setExporting(true);
     try {
-      const raw = await exportNotifications({ format: "pdf", range });
-      const blob = new Blob([raw], { type: "text/plain" });
+      const blob = await exportNotifications({ format: exportFormat, range });
+      const extMap: Record<string, string> = { pdf: "pdf", excel: "xlsx", csv: "csv" };
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `notifications-${range}.pdf`;
+      a.download = `notifications-${range}.${extMap[exportFormat]}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      // Silently handle export error — backend may return 501 for PDF
+      alert("Gagal export data. Coba lagi.");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -284,13 +289,25 @@ export default function NotificationsPage() {
         <h1 className="font-display text-display-sm text-on-surface">
           Notification History
         </h1>
-        <button
-          onClick={handleExport}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-outline-variant bg-surface px-4 py-2.5 text-label-md text-on-surface shadow-sm hover:bg-surface-container sm:w-auto"
-        >
-          <Download size={15} />
-          Export PDF
-        </button>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <select
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value as "pdf" | "excel" | "csv")}
+            className="rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-label-md text-on-surface shadow-sm focus:outline-none"
+          >
+            <option value="pdf">PDF</option>
+            <option value="excel">Excel</option>
+            <option value="csv">CSV</option>
+          </select>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-outline-variant bg-surface px-4 py-2.5 text-label-md text-on-surface shadow-sm hover:bg-surface-container disabled:opacity-60 sm:flex-none"
+          >
+            <Download size={15} />
+            {exporting ? "Exporting…" : "Export"}
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

@@ -9,7 +9,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle } from "lucide-react";
 
+import { useEffect } from "react";
 import { register as apiRegister } from "@/lib/api/auth";
+import { initCsrf } from "@/lib/api/csrf";
 import {
   AuthCard,
   ErrorBanner,
@@ -80,6 +82,9 @@ export default function RegisterPage() {
 
   const password = watch("password", "");
   const isLoading = isSubmitting || isPending;
+
+  // Ensure CSRF cookie is set before the first POST.
+  useEffect(() => { initCsrf(); }, []);
 
   const onSubmit = handleSubmit(async (data) => {
     try {

@@ -110,7 +110,7 @@ function VaultHealthWidget() {
   if (!data) return null;
 
   const score = data.completeness_score ?? 0;
-  const presentCategories = new Set(data.categories.map((c) => c.category));
+  const presentCategories = new Set((data.categories ?? []).map((c) => c.category));
 
   return (
     <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5">
@@ -164,7 +164,7 @@ function VaultHealthWidget() {
 function WolesTip({ health }: { health: { categories: Array<{ category: VaultCategory; count: number }> } | undefined }) {
   if (!health) return null;
 
-  const presentCategories = new Set(health.categories.map((c) => c.category));
+  const presentCategories = new Set((health.categories ?? []).map((c) => c.category));
   const missing = IMPORTANT_CATEGORIES.filter((c) => !presentCategories.has(c));
 
   if (missing.length === 0) return null;

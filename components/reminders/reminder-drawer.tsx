@@ -26,7 +26,7 @@ const CATEGORIES: ReminderCategory[] = [
 ];
 
 const RECURRENCE_TYPES: RecurrenceType[] = [
-  "once",
+  "one_time",
   "daily",
   "weekly",
   "monthly",
@@ -37,7 +37,7 @@ const RECURRENCE_TYPES: RecurrenceType[] = [
 const schema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   category: z.enum(["bill","health","vehicle","insurance","subscription","tax","personal","work","family","custom"] as [ReminderCategory, ...ReminderCategory[]]),
-  recurrence_type: z.enum(["once","daily","weekly","monthly","yearly","custom_interval"] as [RecurrenceType, ...RecurrenceType[]]),
+  recurrence_type: z.enum(["one_time","daily","weekly","monthly","yearly","custom_interval"] as [RecurrenceType, ...RecurrenceType[]]),
   interval_days: z.number().int().min(1).optional(),
   next_run_at_date: z.string().min(1, "Date is required"),
   next_run_at_time: z.string().min(1, "Time is required"),
@@ -85,9 +85,11 @@ export function ReminderDrawer({ open, onClose, reminder }: ReminderDrawerProps)
   const isEdit = !!reminder;
 
   const today = new Date();
+  // Default time is 1 hour ahead to ensure next_run_at is in the future
+  const oneHourAhead = new Date(today.getTime() + 60 * 60 * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
-  const defaultDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-  const defaultTime = `${pad(today.getHours())}:00`;
+  const defaultDate = `${oneHourAhead.getFullYear()}-${pad(oneHourAhead.getMonth() + 1)}-${pad(oneHourAhead.getDate())}`;
+  const defaultTime = `${pad(oneHourAhead.getHours())}:00`;
 
   const { date: editDate, time: editTime } = reminder?.next_run_at
     ? toLocalDatetimeString(reminder.next_run_at)
@@ -181,182 +183,178 @@ export function ReminderDrawer({ open, onClose, reminder }: ReminderDrawerProps)
         aria-hidden
       />
 
-      {/* Panel: right-side on md+, bottom sheet on mobile */}
-      <aside
+      {/* Modal — centered like upload modal */}
+      <div
         role="dialog"
         aria-modal="true"
         aria-label={isEdit ? "Edit reminder" : "New reminder"}
-        className={[
-          "fixed z-50 flex flex-col bg-surface-container-lowest shadow-xl",
-          // Mobile: bottom sheet
-          "bottom-0 left-0 right-0 max-h-[90dvh] rounded-t-2xl",
-          // Desktop: right drawer
-          "md:bottom-auto md:right-0 md:top-0 md:h-full md:w-[420px] md:rounded-none md:rounded-l-2xl",
-        ].join(" ")}
+        className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-outline-variant px-5 py-4">
-          <h2 className="font-display text-title-lg text-on-surface">
-            {isEdit ? "Edit Reminder" : "New Reminder"}
-          </h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
+        <div className="relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl bg-surface-container-lowest shadow-xl sm:rounded-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-outline-variant px-5 py-4">
+            <h2 className="font-display text-title-lg text-on-surface">
+              {isEdit ? "Edit Reminder" : "New Reminder"}
+            </h2>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Form */}
+          <form
+            onSubmit={handleSubmit((d) => mutation.mutate(d))}
+            className="flex-1 overflow-y-auto px-5 py-5"
+            noValidate
           >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit((d) => mutation.mutate(d))}
-          className="flex-1 overflow-y-auto px-5 py-5"
-          noValidate
-        >
-          {mutation.isError && (
-            <p className="mb-4 rounded-lg bg-error-container px-4 py-2.5 text-label-md text-error">
-              {(mutation.error as Error)?.message ?? "Something went wrong. Try again."}
-            </p>
-          )}
-
-          {/* Title */}
-          <div className="mb-4">
-            <label className="mb-1.5 block text-label-md text-on-surface-variant">
-              Title <span className="text-error">*</span>
-            </label>
-            <input
-              {...register("title")}
-              placeholder="e.g. Pay electricity bill"
-              className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-            {errors.title && (
-              <p className="mt-1 text-label-sm text-error">{errors.title.message}</p>
+            {mutation.isError && (
+              <p className="mb-4 rounded-lg bg-error-container px-4 py-2.5 text-label-md text-error">
+                {(mutation.error as Error)?.message ?? "Something went wrong. Try again."}
+              </p>
             )}
-          </div>
 
-          {/* Category */}
-          <div className="mb-4">
-            <label className="mb-1.5 block text-label-md text-on-surface-variant">
-              Category
-            </label>
-            <select
-              {...register("category")}
-              className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {capitalize(c)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Recurrence Type */}
-          <div className="mb-4">
-            <label className="mb-1.5 block text-label-md text-on-surface-variant">
-              Recurrence
-            </label>
-            <select
-              {...register("recurrence_type")}
-              className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            >
-              {RECURRENCE_TYPES.map((r) => (
-                <option key={r} value={r}>
-                  {capitalize(r)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Interval days (only for custom_interval) */}
-          {recurrenceType === "custom_interval" && (
+            {/* Title */}
             <div className="mb-4">
               <label className="mb-1.5 block text-label-md text-on-surface-variant">
-                Repeat every (days)
+                Title <span className="text-error">*</span>
               </label>
               <input
-                {...register("interval_days", { valueAsNumber: true })}
-                type="number"
-                min={1}
-                placeholder="7"
-                className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                {...register("title")}
+                placeholder="e.g. Pay electricity bill"
+                className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary"
               />
-              {errors.interval_days && (
-                <p className="mt-1 text-label-sm text-error">
-                  {errors.interval_days.message}
-                </p>
+              {errors.title && (
+                <p className="mt-1 text-label-sm text-error">{errors.title.message}</p>
               )}
             </div>
-          )}
 
-          {/* Date + Time */}
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-label-md text-on-surface-variant">
-                Date <span className="text-error">*</span>
-              </label>
-              <input
-                {...register("next_run_at_date")}
-                type="date"
-                className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-              {errors.next_run_at_date && (
-                <p className="mt-1 text-label-sm text-error">
-                  {errors.next_run_at_date.message}
-                </p>
-              )}
+            {/* Category + Recurrence */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-label-md text-on-surface-variant">
+                  Category
+                </label>
+                <select
+                  {...register("category")}
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {capitalize(c)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-label-md text-on-surface-variant">
+                  Recurrence
+                </label>
+                <select
+                  {...register("recurrence_type")}
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  {RECURRENCE_TYPES.map((r) => (
+                    <option key={r} value={r}>
+                      {capitalize(r)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="mb-1.5 block text-label-md text-on-surface-variant">
-                Time <span className="text-error">*</span>
-              </label>
-              <input
-                {...register("next_run_at_time")}
-                type="time"
-                className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-              {errors.next_run_at_time && (
-                <p className="mt-1 text-label-sm text-error">
-                  {errors.next_run_at_time.message}
-                </p>
-              )}
-            </div>
-          </div>
 
-          {/* Timezone */}
-          <div className="mb-6">
-            <label className="mb-1.5 block text-label-md text-on-surface-variant">
-              Timezone
-            </label>
-            <select
-              {...register("timezone")}
-              className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            {/* Interval days (only for custom_interval) */}
+            {recurrenceType === "custom_interval" && (
+              <div className="mb-4">
+                <label className="mb-1.5 block text-label-md text-on-surface-variant">
+                  Repeat every (days)
+                </label>
+                <input
+                  {...register("interval_days", { valueAsNumber: true })}
+                  type="number"
+                  min={1}
+                  placeholder="7"
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                {errors.interval_days && (
+                  <p className="mt-1 text-label-sm text-error">
+                    {errors.interval_days.message}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Date + Time */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1.5 block text-label-md text-on-surface-variant">
+                  Date <span className="text-error">*</span>
+                </label>
+                <input
+                  {...register("next_run_at_date")}
+                  type="date"
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                {errors.next_run_at_date && (
+                  <p className="mt-1 text-label-sm text-error">
+                    {errors.next_run_at_date.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="mb-1.5 block text-label-md text-on-surface-variant">
+                  Time <span className="text-error">*</span>
+                </label>
+                <input
+                  {...register("next_run_at_time")}
+                  type="time"
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                {errors.next_run_at_time && (
+                  <p className="mt-1 text-label-sm text-error">
+                    {errors.next_run_at_time.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Timezone */}
+            <div className="mb-6">
+              <label className="mb-1.5 block text-label-md text-on-surface-variant">
+                Timezone
+              </label>
+              <select
+                {...register("timezone")}
+                className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                {INDONESIAN_TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full rounded-lg bg-primary py-3 font-display text-label-lg text-on-primary shadow transition hover:brightness-110 disabled:opacity-60"
             >
-              {INDONESIAN_TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="w-full rounded-lg bg-primary py-3 font-display text-label-lg text-on-primary shadow transition hover:brightness-110 disabled:opacity-60"
-          >
-            {mutation.isPending
-              ? isEdit
-                ? "Saving…"
-                : "Creating…"
-              : isEdit
-                ? "Save Changes"
-                : "Create Reminder"}
-          </button>
-        </form>
-      </aside>
+              {mutation.isPending
+                ? isEdit
+                  ? "Saving…"
+                  : "Creating…"
+                : isEdit
+                  ? "Save Changes"
+                  : "Create Reminder"}
+            </button>
+          </form>
+        </div>
+      </div>
     </>
   );
 }

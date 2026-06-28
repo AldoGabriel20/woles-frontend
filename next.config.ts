@@ -45,7 +45,29 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: CSP },
 ];
 
+// Backend API base URL (used for proxy rewrites)
+const backendApiBase =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api/v1";
+
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return {
+      // beforeFiles: runs before ALL filesystem routes (pages, route handlers).
+      // This ensures requests to /api/auth/* and /api/csrf are transparently
+      // proxied to the backend, which sets cookies on localhost:3000 (the
+      // same origin the proxy.ts middleware reads them from).
+      beforeFiles: [
+        {
+          source: "/api/auth/:path*",
+          destination: `${backendApiBase}/auth/:path*`,
+        },
+        {
+          source: "/api/csrf",
+          destination: `${apiOrigin}/health`,
+        },
+      ],
+    };
+  },
   async headers() {
     return [
       {

@@ -58,7 +58,7 @@ export type ReminderCategory =
   | "custom";
 
 export type RecurrenceType =
-  | "once"
+  | "one_time"
   | "daily"
   | "weekly"
   | "monthly"
@@ -386,7 +386,7 @@ export interface NotificationListParams {
 }
 
 export interface NotificationExportParams {
-  format: "csv" | "pdf";
+  format: "csv" | "pdf" | "excel";
   range?: string;
 }
 

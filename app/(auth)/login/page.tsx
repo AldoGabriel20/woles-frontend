@@ -8,7 +8,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { useAuth } from "@/lib/auth/useAuth";
+import { useEffect } from "react";
+import { login as apiLogin } from "@/lib/api/auth";
+import { initCsrf } from "@/lib/api/csrf";
 import {
   AuthCard,
   ErrorBanner,
@@ -47,7 +49,6 @@ function getErrorMessage(err: unknown): string {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
   const [isPending, startTransition] = useTransition();
 
   const {
@@ -61,9 +62,14 @@ export default function LoginPage() {
 
   const isLoading = isSubmitting || isPending;
 
+  // Ensure CSRF cookie is set before the first POST.
+  useEffect(() => { initCsrf(); }, []);
+
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await login(data.email, data.password);
+      await apiLogin({ email: data.email, password: data.password });
+      // The refresh_token HttpOnly cookie is now set by the backend.
+      // The dashboard AuthProvider will pick it up via silent refresh on mount.
       const next = searchParams.get("next") ?? "/dashboard";
       startTransition(() => {
         router.push(next);

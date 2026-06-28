@@ -24,6 +24,21 @@ const VAULT_CATEGORIES: VaultCategory[] = [
   "other",
 ];
 
+const DOCUMENT_TYPES: { value: string; label: string }[] = [
+  { value: "ktp", label: "KTP" },
+  { value: "passport", label: "Passport" },
+  { value: "sim", label: "SIM" },
+  { value: "visa", label: "Visa" },
+  { value: "stnk", label: "STNK" },
+  { value: "bpkb", label: "BPKB" },
+  { value: "vehicle_insurance", label: "Asuransi Kendaraan" },
+  { value: "health_insurance", label: "Asuransi Kesehatan" },
+  { value: "life_insurance", label: "Asuransi Jiwa" },
+  { value: "tax", label: "Pajak" },
+  { value: "investment", label: "Investasi" },
+  { value: "other", label: "Lainnya" },
+];
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
@@ -31,7 +46,7 @@ const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
 const schema = z.object({
   title: z.string().min(1, "Title is required").max(200),
-  document_type: z.string().max(100).optional(),
+  document_type: z.string().optional(),
   vault_category: z.enum([
     "identity", "vehicles", "property", "financial", "health",
     "education", "insurance", "legal", "other",
@@ -74,7 +89,7 @@ export function UploadModal({ open, onClose, document: doc }: UploadModalProps) 
     resolver: zodResolver(schema),
     defaultValues: {
       title: doc?.title ?? "",
-      document_type: doc?.document_type ?? "",
+      document_type: doc?.document_type ?? "other",
       vault_category: doc?.vault_category ?? "other",
       expiry_date: doc?.expiry_date?.slice(0, 10) ?? "",
       notes: doc?.notes ?? "",
@@ -85,7 +100,7 @@ export function UploadModal({ open, onClose, document: doc }: UploadModalProps) 
   useEffect(() => {
     reset({
       title: doc?.title ?? "",
-      document_type: doc?.document_type ?? "",
+      document_type: doc?.document_type ?? "other",
       vault_category: doc?.vault_category ?? "other",
       expiry_date: doc?.expiry_date?.slice(0, 10) ?? "",
       notes: doc?.notes ?? "",
@@ -108,7 +123,7 @@ export function UploadModal({ open, onClose, document: doc }: UploadModalProps) 
         title: data.title,
         vault_category: data.vault_category,
         ...(data.document_type ? { document_type: data.document_type } : {}),
-        ...(data.expiry_date ? { expiry_date: `${data.expiry_date}T00:00:00Z` } : {}),
+        ...(data.expiry_date ? { expiry_date: data.expiry_date } : {}),
         ...(data.notes ? { notes: data.notes } : {}),
       };
 
@@ -217,11 +232,16 @@ export function UploadModal({ open, onClose, document: doc }: UploadModalProps) 
                 <label className="mb-1.5 block text-label-md text-on-surface-variant">
                   Type
                 </label>
-                <input
+                <select
                   {...register("document_type")}
-                  placeholder="e.g. Passport"
-                  className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary"
-                />
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  {DOCUMENT_TYPES.map((dt) => (
+                    <option key={dt.value} value={dt.value}>
+                      {dt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="mb-1.5 block text-label-md text-on-surface-variant">

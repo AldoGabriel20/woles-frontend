@@ -312,7 +312,7 @@ export default function DashboardPage() {
             This Month
           </h2>
           <Link
-            href="/dashboard/timeline"
+            href="/dashboard"
             className="flex items-center gap-1 text-label-md font-medium text-primary hover:underline"
           >
             View All
@@ -334,7 +334,7 @@ export default function DashboardPage() {
               Nothing due this month.
             </p>
             <Link
-              href="/dashboard/reminders"
+              href="/reminders"
               className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-label-md font-medium text-on-primary hover:opacity-90"
             >
               <Plus size={16} />
@@ -357,17 +357,17 @@ export default function DashboardPage() {
         </h2>
         <div className="flex flex-col gap-2 sm:flex-row">
           <QuickAction
-            href="/dashboard/reminders?new=1"
+            href="/reminders?new=1"
             icon={<Bell size={18} />}
             label="New Reminder"
           />
           <QuickAction
-            href="/dashboard/documents?new=1"
+            href="/documents?new=1"
             icon={<FileText size={18} />}
             label="Add Document"
           />
           <QuickAction
-            href="/dashboard/goals?new=1"
+            href="/finances/goals?new=1"
             icon={<Target size={18} />}
             label="Set Goal"
           />

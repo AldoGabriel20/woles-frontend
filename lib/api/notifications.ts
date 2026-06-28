@@ -25,14 +25,20 @@ export async function getNotificationStats(): Promise<NotificationStats> {
 }
 
 /**
- * Export notification history as CSV or PDF.
- * Returns the raw string content (CSV rows or plain-text PDF).
+ * Export notification history as CSV, PDF, or Excel.
+ * Returns a Blob ready for download.
  */
 export async function exportNotifications(
   params: NotificationExportParams,
-): Promise<string> {
-  const res = await apiClient.get<{ raw: string }>("/notifications/export", {
+): Promise<Blob> {
+  const res = await apiClient.get<ArrayBuffer>("/notifications/export", {
     params,
+    responseType: "arraybuffer",
   });
-  return res.data.raw;
+  const mimeMap: Record<string, string> = {
+    pdf: "application/pdf",
+    excel: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    csv: "text/csv",
+  };
+  return new Blob([res.data], { type: mimeMap[params.format] ?? "text/csv" });
 }

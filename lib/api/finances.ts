@@ -53,3 +53,18 @@ export async function getUpcomingBills(
   return res.data;
 }
 
+export async function exportFinances(
+  format: "csv" | "pdf" | "excel",
+): Promise<Blob> {
+  const res = await apiClient.get<ArrayBuffer>("/finances/export", {
+    params: { format },
+    responseType: "arraybuffer",
+  });
+  const mimeMap: Record<string, string> = {
+    pdf: "application/pdf",
+    excel: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    csv: "text/csv",
+  };
+  return new Blob([res.data], { type: mimeMap[format] ?? "text/csv" });
+}
+

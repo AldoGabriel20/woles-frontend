@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { deleteDocument } from "@/lib/api/documents";
+import { deleteDocument, getDocumentFileURL } from "@/lib/api/documents";
 import type { Document, VaultCategory } from "@/lib/api/types";
 
 // ─── Category → icon ──────────────────────────────────────────────────────────
@@ -85,6 +85,7 @@ interface DocumentCardProps {
 export function DocumentCard({ doc, onEdit }: DocumentCardProps) {
   const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loadingFile, setLoadingFile] = useState(false);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["documents"] });
@@ -123,16 +124,25 @@ export function DocumentCard({ doc, onEdit }: DocumentCardProps) {
           {menuOpen && (
             <div className="absolute right-0 top-8 z-10 min-w-[140px] rounded-lg border border-outline-variant bg-surface-container-lowest py-1 shadow-lg">
               {doc.file_url && (
-                <a
-                  href={doc.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-label-md text-on-surface hover:bg-surface-container"
+                <button
+                  onClick={async () => {
+                    setMenuOpen(false);
+                    setLoadingFile(true);
+                    try {
+                      const url = await getDocumentFileURL(doc.id);
+                      window.open(url, "_blank", "noopener,noreferrer");
+                    } catch {
+                      alert("Gagal membuka file. Coba lagi.");
+                    } finally {
+                      setLoadingFile(false);
+                    }
+                  }}
+                  disabled={loadingFile}
+                  className="flex w-full items-center gap-2 px-4 py-2.5 text-label-md text-on-surface hover:bg-surface-container disabled:opacity-50"
                 >
                   <FileText size={16} />
-                  View File
-                </a>
+                  {loadingFile ? "Loading…" : "View File"}
+                </button>
               )}
               <button
                 onClick={() => {
